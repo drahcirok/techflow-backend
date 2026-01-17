@@ -36,7 +36,7 @@ public class SecurityConfig {
                         // 🔓 Rutas PÚBLICAS (Login, Registro y RASTREO)
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/orders/track/**").permitAll() // 👈 ¡ESTA ES LA LÍNEA QUE FALTABA!
-
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // 🔐 Todo lo demás requiere Token
                         .anyRequest().authenticated()
                 )
