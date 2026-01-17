@@ -33,13 +33,16 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // 🔓 Rutas PÚBLICAS (Login, Registro y RASTREO)
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/orders/track/**").permitAll() // 👈 ¡ESTA ES LA LÍNEA QUE FALTABA!
+
+                        // 🔐 Todo lo demás requiere Token
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                // 👇 BORRÉ LA LÍNEA .authenticationProvider(...) PORQUE SPRING LO HACE SOLO
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -47,10 +50,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService) {
-        // Usamos la ruta COMPLETA para que no haya dudas
-        org.springframework.security.authentication.dao.DaoAuthenticationProvider authProvider =
-                new org.springframework.security.authentication.dao.DaoAuthenticationProvider();
-
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;

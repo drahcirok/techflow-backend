@@ -1,11 +1,13 @@
 package com.techflow.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
+
 
 @Entity
 @Table(name = "order_items")
@@ -21,6 +23,7 @@ public class OrderItem {
 
     @ManyToOne
     @JoinColumn(name = "service_order_id", nullable = false)
+    @JsonBackReference // 👈 AGREGAR ESTO sobre la variable serviceOrder
     private ServiceOrder serviceOrder;
 
     @ManyToOne

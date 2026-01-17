@@ -18,4 +18,23 @@ public class ServiceOrderController {
     public ResponseEntity<ServiceOrder> createOrder(@RequestBody ServiceOrderRequest request) {
         return ResponseEntity.ok(serviceOrderService.createOrder(request));
     }
+    // ... código anterior ...
+
+    // Endpoint: GET /api/orders/track/550e8400-e29b...
+    @GetMapping("/track/{trackingCode}")
+    public ResponseEntity<ServiceOrder> trackOrder(@PathVariable String trackingCode) {
+        return ResponseEntity.ok(serviceOrderService.getOrderByTrackingCode(trackingCode));
+    }
+    // GET /api/orders/{id}/invoice
+    @GetMapping("/{id}/invoice")
+    public ResponseEntity<ServiceOrder> getInvoice(@PathVariable Long id) {
+        // 1. Buscas la orden
+        ServiceOrder order = serviceOrderService.getOrderById(id);
+
+        // 2. Seguridad: ¿El usuario que pide esto es el dueño de la orden?
+        // (Aquí usas el token para verificar que el ID del cliente coincida)
+
+        return ResponseEntity.ok(order);
+    }
+
 }

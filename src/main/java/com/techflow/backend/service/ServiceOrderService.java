@@ -23,24 +23,30 @@ public class ServiceOrderService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
 
-    @Transactional // 👈 IMPORTANTE: Si algo falla, se deshacen todos los cambios (Rollback)
+    @Transactional // 👈 IMPORTANTE: Si algo falla (como falta de stock), se deshace todo.
     public ServiceOrder createOrder(ServiceOrderRequest request) {
 
         // 1. Buscar al cliente
         User client = userRepository.findById(request.getClientId())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
-        // 2. Crear la cabecera de la orden
+        // 2. Definir Mano de Obra (Si no envían nada, asumimos 0 para evitar errores matemáticos)
+        BigDecimal laborCost = request.getLaborCost() != null ? request.getLaborCost() : BigDecimal.ZERO;
+
+        // 3. Crear la estructura base de la Orden
         ServiceOrder order = ServiceOrder.builder()
                 .description(request.getDescription())
                 .type(request.getType())
                 .status(OrderStatus.PENDIENTE) // Nace como Pendiente
                 .client(client)
+                .laborCost(laborCost) // Guardamos el costo de mano de obra
+                .items(new ArrayList<>()) // Inicializamos la lista vacía para llenarla abajo
                 .build();
 
-        // 3. Procesar los repuestos (si los hay)
+        BigDecimal itemsTotalCost = BigDecimal.ZERO; // Acumulador para sumar los repuestos
+
+        // 4. Procesar los repuestos (si los hay)
         if (request.getItems() != null && !request.getItems().isEmpty()) {
-            List<OrderItem> orderItems = new ArrayList<>();
 
             for (OrderItemRequest itemRequest : request.getItems()) {
                 // a. Buscar producto
@@ -52,25 +58,44 @@ public class ServiceOrderService {
                     throw new RuntimeException("Stock insuficiente para: " + product.getName());
                 }
 
-                // c. Descontar del Inventario (¡Magia!)
+                // c. Descontar del Inventario
                 product.setStock(product.getStock() - itemRequest.getQuantity());
                 productRepository.save(product);
 
-                // d. Crear el item de la orden
+                // d. Calcular costo de este ítem (Precio actual * Cantidad)
+                BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
+                itemsTotalCost = itemsTotalCost.add(itemTotal);
+
+                // e. Crear el item de la orden y vincularlo
                 OrderItem orderItem = OrderItem.builder()
-                        .serviceOrder(order)
+                        .serviceOrder(order) // Vinculamos a la orden padre
                         .product(product)
                         .quantity(itemRequest.getQuantity())
                         .price(product.getPrice()) // Congelamos el precio al momento de la orden
                         .build();
 
-                orderItems.add(orderItem);
+                // f. Agregar a la lista de la orden (Importante para que se guarden juntos)
+                order.getItems().add(orderItem);
             }
-            // Aquí deberíamos guardar los items, pero por simplicidad en JPA
-            // a veces se configuran cascadas. Por ahora dejémoslo así.
         }
 
-        // 4. Guardar y devolver
+        // 5. Calcular Total Final (Mano de Obra + Repuestos)
+        order.setTotalCost(laborCost.add(itemsTotalCost));
+
+        // 6. Guardar todo
+        // Gracias a CascadeType.ALL en la entidad, al guardar la orden se guardan los items automáticamente
         return orderRepository.save(order);
+    }
+
+    // Método para que el cliente rastree su orden
+    public ServiceOrder getOrderByTrackingCode(String trackingCode) {
+        return orderRepository.findByTrackingCode(trackingCode)
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada con código: " + trackingCode));
+    }
+
+    // Método auxiliar para buscar por ID (útil para imprimir factura si estás logueado)
+    public ServiceOrder getOrderById(Long id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
     }
 }
