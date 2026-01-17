@@ -6,6 +6,7 @@ import com.techflow.backend.service.ServiceOrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.techflow.backend.enums.OrderStatus;
 
 @RestController
 @RequestMapping("/api/orders") // 🔐 Ruta protegida
@@ -35,6 +36,12 @@ public class ServiceOrderController {
         // (Aquí usas el token para verificar que el ID del cliente coincida)
 
         return ResponseEntity.ok(order);
+    }
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ServiceOrder> updateStatus(
+            @PathVariable Long id,
+            @RequestParam OrderStatus status) {
+        return ResponseEntity.ok(serviceOrderService.updateStatus(id, status));
     }
 
 }

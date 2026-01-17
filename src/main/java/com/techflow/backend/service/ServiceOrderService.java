@@ -98,4 +98,12 @@ public class ServiceOrderService {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
     }
+    // ... código anterior ...
+
+    // Método para cambiar el estado (Ej: DE PENDIENTE A TERMINADO)
+    public ServiceOrder updateStatus(Long id, OrderStatus newStatus) {
+        ServiceOrder order = getOrderById(id); // Reusamos el método que ya tienes
+        order.setStatus(newStatus);
+        return orderRepository.save(order);
+    }
 }
