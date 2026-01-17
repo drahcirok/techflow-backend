@@ -20,6 +20,10 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean active = true; // 👈 Por defecto, todo nace activo
+
     @Column(unique = true, nullable = false)
     private String sku; // Código de barras o identificador único (Ej: RAM-COR-8GB)
 
