@@ -94,12 +94,5 @@ Desde allí podrás probar todos los endpoints (`Login`, `Crear Orden`, `Listar 
 
 ---
 
-## 👥 Equipo de Desarrollo
-
-* **Richard** - *Team Leader & Backend Developer*
-* **[Nombre Compañero]** - *Frontend Developer & Project Manager*
-* **[Nombre Compañero]** - *[Rol]*
-
----
 
 Desarrollado por drahcirok
