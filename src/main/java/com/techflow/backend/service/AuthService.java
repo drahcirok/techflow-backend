@@ -13,7 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor // Inyecta automáticamente los 'final' (Lombok)
+@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -26,7 +26,7 @@ public class AuthService {
         var user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword())) // 🔐 ¡Importante!
+                .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
                 .active(true)
                 .build();
@@ -35,7 +35,8 @@ public class AuthService {
         userRepository.save(user);
 
         // 3. Generar token
-        var jwtToken = jwtUtil.generateToken(user.getEmail());
+        // 🔴 CORREGIDO: Pasamos el objeto 'user' completo, no solo el email
+        var jwtToken = jwtUtil.generateToken(user);
 
         return AuthResponse.builder()
                 .token(jwtToken)
@@ -48,9 +49,11 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        // 2. Si pasó la línea anterior, es válido. Generamos token.
+        // 2. Si pasó la línea anterior, es válido. Recuperamos el usuario completo.
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
-        var jwtToken = jwtUtil.generateToken(user.getEmail());
+
+        // 🔴 CORREGIDO: Pasamos el objeto 'user' completo
+        var jwtToken = jwtUtil.generateToken(user);
 
         return AuthResponse.builder()
                 .token(jwtToken)

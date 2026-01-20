@@ -2,6 +2,7 @@ package com.techflow.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -12,12 +13,12 @@ public class WebConfig {
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // Permite todas las rutas
-                        .allowedOrigins("http://localhost:5173", "http://localhost:3000") // 👈 Puertos comunes de Frontend (Vite/React)
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS") // Permite todos los verbos
-                        .allowedHeaders("*")
-                        .allowCredentials(true);
+            public void addCorsMappings(@NonNull CorsRegistry registry) {
+                registry.addMapping("/**") // Aplica a TODAS las rutas
+                        .allowedOrigins("http://localhost:5173", "http://localhost:3000") // 👈 AQUÍ ESTÁ LA CLAVE
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH") // Métodos permitidos
+                        .allowedHeaders("*") // Permitir todos los headers (como Authorization)
+                        .allowCredentials(true); // Permitir cookies/credenciales si fuera necesario
             }
         };
     }
