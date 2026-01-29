@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List; // 👈 Importante para las listas
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -17,31 +17,33 @@ public class ServiceOrderController {
 
     private final ServiceOrderService serviceOrderService;
 
-    // 👇 ESTE ES EL MÉTODO QUE TE FALTABA 👇
+    // 🟢 GET PRINCIPAL: Solo trae las órdenes ACTIVAS
+    // Cuando entres al Dashboard, llamarás a este.
     @GetMapping
     public ResponseEntity<List<ServiceOrder>> getAllOrders() {
-        return ResponseEntity.ok(serviceOrderService.getAllOrders());
+        return ResponseEntity.ok(serviceOrderService.getAllActiveOrders());
     }
-    // 👆 SIN ESTO, EL DASHBOARD NO PUEDE MOSTRAR LA TABLA
+
+    // 🟠 GET HISTORIAL: Solo trae las órdenes CERRADAS
+    // Cuando entres a la página de "Historial", llamarás a este.
+    @GetMapping("/history")
+    public ResponseEntity<List<ServiceOrder>> getHistory() {
+        return ResponseEntity.ok(serviceOrderService.getHistoryOrders());
+    }
 
     @PostMapping
     public ResponseEntity<ServiceOrder> createOrder(@RequestBody ServiceOrderRequest request) {
         return ResponseEntity.ok(serviceOrderService.createOrder(request));
     }
 
-    // Endpoint: GET /api/orders/track/550e8400-e29b...
     @GetMapping("/track/{trackingCode}")
     public ResponseEntity<ServiceOrder> trackOrder(@PathVariable String trackingCode) {
         return ResponseEntity.ok(serviceOrderService.getOrderByTrackingCode(trackingCode));
     }
 
-    // GET /api/orders/{id}/invoice
     @GetMapping("/{id}/invoice")
     public ResponseEntity<ServiceOrder> getInvoice(@PathVariable Long id) {
-        // 1. Buscas la orden
-        ServiceOrder order = serviceOrderService.getOrderById(id);
-        // Aquí podrías validar si el usuario es dueño de la orden
-        return ResponseEntity.ok(order);
+        return ResponseEntity.ok(serviceOrderService.getOrderById(id));
     }
 
     @PatchMapping("/{id}/status")

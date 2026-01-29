@@ -1,5 +1,6 @@
 package com.techflow.backend.security;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,24 +33,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
-        final String userEmail;
+        String userEmail = null;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
+        // 🟢 SOLUCIÓN: Asignamos 'jwt' AQUÍ, fuera del try, porque es seguro.
         jwt = authHeader.substring(7);
-        userEmail = jwtUtil.extractUsername(jwt);
+
+        try {
+            // Solo protegemos la extracción del usuario que es lo que puede fallar
+            userEmail = jwtUtil.extractUsername(jwt);
+        } catch (ExpiredJwtException e) {
+            System.out.println("⚠️ Token expirado. El usuario debe volver a loguearse.");
+        } catch (Exception e) {
+            System.out.println("⚠️ Error en el token: " + e.getMessage());
+        }
 
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-            // 🔴 CORRECCIÓN AQUÍ:
-            // Antes tenías: jwtUtil.isTokenValid(jwt, userDetails.getUsername())
-            // Ahora pasamos el objeto completo 'userDetails':
             if (jwtUtil.isTokenValid(jwt, userDetails)) {
-
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
