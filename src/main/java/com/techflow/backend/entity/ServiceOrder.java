@@ -51,10 +51,20 @@ public class ServiceOrder {
     @Column(name = "total_cost")
     private BigDecimal totalCost;
 
+    // DATOS DEL CLIENTE (para órdenes sin cuenta o para vincular después)
+    @Column(name = "client_email")
+    private String clientEmail;
+
+    @Column(name = "client_name")
+    private String clientName;
+
+    @Column(name = "client_phone")
+    private String clientPhone;
+
     // RELACIONES
     @ManyToOne
-    @JoinColumn(name = "client_id", nullable = false)
-    private User client;
+    @JoinColumn(name = "client_id")
+    private User client; // Puede ser null si el cliente no tiene cuenta
 
     @ManyToOne
     @JoinColumn(name = "technician_id")
@@ -70,6 +80,16 @@ public class ServiceOrder {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // ⭐ CAMPOS DE VALORACIÓN DEL CLIENTE
+    @Column(name = "rating")
+    private Integer rating; // 1-5 estrellas
+
+    @Column(name = "rating_comment", columnDefinition = "TEXT")
+    private String ratingComment;
+
+    @Column(name = "rated_at")
+    private LocalDateTime ratedAt;
 
     // 👇 AQUÍ OCURRE LA MAGIA AUTOMÁTICA
     @PrePersist

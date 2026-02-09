@@ -9,7 +9,10 @@ import java.util.List;
 public class ServiceOrderRequest {
     private String description;
     private ServiceType type;
-    private Long clientId;
-    private BigDecimal laborCost; // 👈 Nuevo campo: "Cuánto cobro por el trabajo"
+    private Long clientId; // ID del cliente si ya tiene cuenta
+    private String clientEmail; // Email del cliente (para vincular después)
+    private String clientName; // Nombre del cliente sin cuenta
+    private String clientPhone; // Teléfono del cliente sin cuenta
+    private BigDecimal laborCost;
     private List<OrderItemRequest> items;
 }

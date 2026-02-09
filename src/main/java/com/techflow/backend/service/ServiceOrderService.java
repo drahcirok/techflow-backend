@@ -25,20 +25,36 @@ public class ServiceOrderService {
 
     @Transactional
     public ServiceOrder createOrder(ServiceOrderRequest request) {
-        // ... (Tu código de crear orden se mantiene igual, no lo borres) ...
-        // Resumido para no llenar la pantalla, pero aquí va toda la lógica de crear
-        User client = userRepository.findById(request.getClientId())
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
         BigDecimal laborCost = request.getLaborCost() != null ? request.getLaborCost() : BigDecimal.ZERO;
 
         ServiceOrder order = ServiceOrder.builder()
                 .description(request.getDescription())
                 .type(request.getType())
                 .status(OrderStatus.PENDIENTE)
-                .client(client)
                 .laborCost(laborCost)
                 .items(new ArrayList<>())
                 .build();
+
+        // Si viene clientId, vincular con usuario existente
+        if (request.getClientId() != null) {
+            User client = userRepository.findById(request.getClientId()).orElse(null);
+            if (client != null) {
+                order.setClient(client);
+                order.setClientEmail(client.getEmail());
+                order.setClientName(client.getName());
+                order.setClientPhone(client.getPhone());
+            }
+        }
+
+        // Si viene clientEmail (cliente sin cuenta), guardar sus datos
+        if (request.getClientEmail() != null && !request.getClientEmail().isBlank()) {
+            order.setClientEmail(request.getClientEmail());
+            order.setClientName(request.getClientName());
+            order.setClientPhone(request.getClientPhone());
+
+            // Buscar si ya existe un usuario con ese email y vincularlo
+            userRepository.findByEmail(request.getClientEmail()).ifPresent(order::setClient);
+        }
 
         BigDecimal itemsTotalCost = BigDecimal.ZERO;
         if (request.getItems() != null && !request.getItems().isEmpty()) {
@@ -89,5 +105,48 @@ public class ServiceOrderService {
         // Mostramos solo lo finalizado
         List<OrderStatus> historyStatuses = List.of(OrderStatus.ENTREGADO, OrderStatus.CANCELADO);
         return orderRepository.findByStatusInOrderByCreatedAtDesc(historyStatuses);
+    }
+
+    // 👇 3. MÉTODO PARA OBTENER TODAS LAS ÓRDENES (para admin)
+    public List<ServiceOrder> getAllOrders() {
+        return orderRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    // 👇 3.1 MÉTODO PARA OBTENER ÓRDENES DE UN CLIENTE (por ID y email del cliente)
+    public List<ServiceOrder> getOrdersByClientId(Long clientId) {
+        // Primero obtenemos el email del cliente
+        User client = userRepository.findById(clientId).orElse(null);
+        if (client != null) {
+            // Buscamos por ID o por email para incluir órdenes creadas antes de registrarse
+            return orderRepository.findByClientIdOrClientEmailOrderByCreatedAtDesc(clientId, client.getEmail());
+        }
+        return orderRepository.findByClientIdOrderByCreatedAtDesc(clientId);
+    }
+
+    // 👇 3.2 MÉTODO PARA OBTENER ÓRDENES POR EMAIL (vincula órdenes anteriores a cuenta nueva)
+    public List<ServiceOrder> getOrdersByClientIdOrEmail(Long clientId, String email) {
+        return orderRepository.findByClientIdOrClientEmailOrderByCreatedAtDesc(clientId, email);
+    }
+
+    // ⭐ 4. MÉTODO PARA AGREGAR VALORACIÓN
+    @Transactional
+    public ServiceOrder addRating(Long orderId, Integer rating, String comment) {
+        ServiceOrder order = getOrderById(orderId);
+
+        // Solo se puede valorar si está entregado
+        if (order.getStatus() != OrderStatus.ENTREGADO) {
+            throw new RuntimeException("Solo puedes valorar órdenes entregadas");
+        }
+
+        // Solo se puede valorar una vez
+        if (order.getRating() != null) {
+            throw new RuntimeException("Esta orden ya fue valorada");
+        }
+
+        order.setRating(rating);
+        order.setRatingComment(comment);
+        order.setRatedAt(java.time.LocalDateTime.now());
+
+        return orderRepository.save(order);
     }
 }

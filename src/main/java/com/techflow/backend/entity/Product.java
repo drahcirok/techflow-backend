@@ -41,4 +41,7 @@ public class Product {
 
     @Column(name = "low_stock_threshold")
     private Integer lowStockThreshold; // Alerta: "Avísame si baja de 5 unidades"
+
+    @Column(name = "image_url", length = 500)
+    private String imageUrl; // URL de la imagen del producto
 }

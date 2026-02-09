@@ -25,7 +25,17 @@ public class ProductController {
     public ResponseEntity<List<Product>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
-    // DELETE /api/products/1
+
+    @GetMapping("/available")
+    public ResponseEntity<List<Product>> getAvailableProducts() {
+        return ResponseEntity.ok(productService.getAvailableProducts());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody ProductDTO dto) {
+        return ResponseEntity.ok(productService.updateProduct(id, dto));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);

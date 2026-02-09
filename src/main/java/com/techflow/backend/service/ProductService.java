@@ -86,4 +86,9 @@ public class ProductService {
         product.setActive(false); // 👻 Lo ocultamos en lugar de borrarlo
         productRepository.save(product);
     }
+
+    // 6. PRODUCTOS DISPONIBLES PARA LA TIENDA (activos y con stock > 0)
+    public List<Product> getAvailableProducts() {
+        return productRepository.findAvailableProducts();
+    }
 }

@@ -25,4 +25,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p WHERE p.stock <= p.lowStockThreshold AND p.active = true")
     List<Product> findLowStockProducts();
 
+    // 👇 3. Para la tienda: productos disponibles (activos y con stock)
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.stock > 0 ORDER BY p.name ASC")
+    List<Product> findAvailableProducts();
+
 }

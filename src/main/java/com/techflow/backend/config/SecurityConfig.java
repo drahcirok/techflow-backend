@@ -61,8 +61,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. Permitir origen exacto (TU FRONTEND)
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        // 1. Permitir origen exacto (TU FRONTEND - ambos puertos posibles de Vite)
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174", "http://localhost:5175"));
 
         // 2. Permitir todos los métodos HTTP
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

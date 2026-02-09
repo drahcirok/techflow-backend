@@ -38,6 +38,9 @@ public class User implements UserDetails { // 👈 1. IMPORTANTE: Implementamos 
     @Column(nullable = false)
     private Role role;
 
+    @Column(name = "phone")
+    private String phone;
+
     private boolean active = true;
 
     // 👇 2. MÉTODOS MÁGICOS DE SEGURIDAD (Esto arregla el error 403) 👇
