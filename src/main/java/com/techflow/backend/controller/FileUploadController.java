@@ -1,6 +1,5 @@
 package com.techflow.backend.controller;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -18,12 +16,24 @@ import java.util.UUID;
 @RequestMapping("/api/files")
 public class FileUploadController {
 
-    // Directorio donde se guardarán las imágenes
-    private static final String UPLOAD_DIR = "uploads/products/";
+    private Path getUploadDir() {
+        // Ruta absoluta basada en el directorio del proyecto
+        Path uploadDir = Paths.get(System.getProperty("user.dir"), "uploads", "products");
+        File dir = uploadDir.toFile();
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        return uploadDir;
+    }
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
+            // Validar que no esté vacío
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El archivo está vacío"));
+            }
+
             // Validar que sea una imagen
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
@@ -35,47 +45,35 @@ public class FileUploadController {
                 return ResponseEntity.badRequest().body(Map.of("error", "La imagen no puede superar 5MB"));
             }
 
-            // Crear directorio si no existe
-            File uploadDir = new File(UPLOAD_DIR);
-            if (!uploadDir.exists()) {
-                uploadDir.mkdirs();
-            }
-
-            // Generar nombre único para el archivo
+            // Generar nombre único
             String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null && originalFilename.contains(".")
-                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                    : ".jpg";
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+            } else {
+                extension = ".jpg";
+            }
             String filename = UUID.randomUUID().toString() + extension;
 
-            // Guardar archivo
-            Path filePath = Paths.get(UPLOAD_DIR + filename);
+            // Guardar archivo con ruta absoluta
+            Path uploadDir = getUploadDir();
+            Path filePath = uploadDir.resolve(filename);
             Files.write(filePath, file.getBytes());
 
-            // Retornar URL de la imagen
+            System.out.println("✅ Imagen guardada en: " + filePath.toAbsolutePath());
+
+            // Retornar URL relativa
             String imageUrl = "/uploads/products/" + filename;
 
-            Map<String, String> response = new HashMap<>();
-            response.put("url", imageUrl);
-            response.put("filename", filename);
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "url", imageUrl,
+                    "filename", filename
+            ));
 
         } catch (IOException e) {
+            System.err.println("❌ Error al guardar imagen: " + e.getMessage());
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Error al guardar la imagen: " + e.getMessage()));
-        }
-    }
-
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteFile(@RequestParam("filename") String filename) {
-        try {
-            Path filePath = Paths.get(UPLOAD_DIR + filename);
-            Files.deleteIfExists(filePath);
-            return ResponseEntity.ok(Map.of("message", "Archivo eliminado"));
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Error al eliminar archivo"));
         }
     }
 }

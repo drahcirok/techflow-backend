@@ -3,6 +3,7 @@ package com.techflow.backend.controller;
 import com.techflow.backend.dto.UpdateProfileRequest;
 import com.techflow.backend.entity.User;
 import com.techflow.backend.enums.Role;
+import com.techflow.backend.repository.ServiceOrderRepository;
 import com.techflow.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final ServiceOrderRepository serviceOrderRepository;
 
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAllUsers() {
@@ -28,6 +30,7 @@ public class UserController {
                     map.put("id", user.getId());
                     map.put("name", user.getName());
                     map.put("email", user.getEmail());
+                    map.put("phone", user.getPhone());
                     map.put("role", user.getRole());
                     map.put("active", user.isActive());
                     return map;
@@ -87,5 +90,60 @@ public class UserController {
                 })
                 .toList();
         return ResponseEntity.ok(clients);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> updateUser(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (request.containsKey("name") && request.get("name") != null && !request.get("name").isBlank()) {
+            user.setName(request.get("name"));
+        }
+        if (request.containsKey("email") && request.get("email") != null && !request.get("email").isBlank()) {
+            user.setEmail(request.get("email"));
+        }
+        if (request.containsKey("phone")) {
+            user.setPhone(request.get("phone"));
+        }
+        if (request.containsKey("role") && request.get("role") != null) {
+            user.setRole(Role.valueOf(request.get("role")));
+        }
+        if (request.containsKey("active") && request.get("active") != null) {
+            user.setActive(Boolean.parseBoolean(request.get("active")));
+        }
+
+        User updated = userRepository.save(user);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", updated.getId());
+        result.put("name", updated.getName());
+        result.put("email", updated.getEmail());
+        result.put("phone", updated.getPhone());
+        result.put("role", updated.getRole());
+        result.put("active", updated.isActive());
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/technician-ratings")
+    public ResponseEntity<Map<Long, Map<String, Object>>> getTechnicianRatings() {
+        List<Object[]> results = serviceOrderRepository.findAverageRatingGroupedByTechnician();
+        Map<Long, Map<String, Object>> ratings = new HashMap<>();
+
+        for (Object[] row : results) {
+            Long techId = (Long) row[0];
+            Double average = (Double) row[1];
+            Long count = (Long) row[2];
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("average", Math.round(average * 10.0) / 10.0);
+            data.put("count", count);
+            ratings.put(techId, data);
+        }
+
+        return ResponseEntity.ok(ratings);
     }
 }

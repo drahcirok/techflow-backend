@@ -3,6 +3,7 @@ package com.techflow.backend.repository;
 import com.techflow.backend.entity.ServiceOrder;
 import com.techflow.backend.enums.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -31,4 +32,8 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
 
     // 6. Para obtener todas las órdenes ordenadas por fecha
     List<ServiceOrder> findAllByOrderByCreatedAtDesc();
+
+    // 7. Promedio de valoracion agrupado por tecnico
+    @Query("SELECT o.technician.id, AVG(o.rating), COUNT(o.rating) FROM ServiceOrder o WHERE o.rating IS NOT NULL AND o.technician IS NOT NULL GROUP BY o.technician.id")
+    List<Object[]> findAverageRatingGroupedByTechnician();
 }

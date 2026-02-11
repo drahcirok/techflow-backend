@@ -24,9 +24,10 @@ public class WebConfig {
 
             @Override
             public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-                // Servir archivos estáticos desde el directorio uploads
+                // Servir archivos estáticos desde el directorio uploads (ruta absoluta)
+                String uploadPath = System.getProperty("user.dir") + "/uploads/";
                 registry.addResourceHandler("/uploads/**")
-                        .addResourceLocations("file:uploads/");
+                        .addResourceLocations("file:" + uploadPath);
             }
         };
     }
