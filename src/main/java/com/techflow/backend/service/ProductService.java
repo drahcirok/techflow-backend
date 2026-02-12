@@ -33,6 +33,7 @@ public class ProductService {
             product.setActive(true); // ¡Vuelve a la vida!
             product.setName(dto.getName());
             product.setDescription(dto.getDescription());
+            product.setImageUrl(dto.getImageUrl());
             product.setPrice(dto.getPrice());
             product.setStock(dto.getStock());
             product.setLowStockThreshold(dto.getLowStockThreshold());
@@ -45,6 +46,7 @@ public class ProductService {
                 .sku(dto.getSku())
                 .name(dto.getName())
                 .description(dto.getDescription())
+                .imageUrl(dto.getImageUrl())
                 .price(dto.getPrice())
                 .stock(dto.getStock())
                 .lowStockThreshold(dto.getLowStockThreshold())
@@ -71,6 +73,7 @@ public class ProductService {
 
         product.setName(dto.getName());
         product.setDescription(dto.getDescription());
+        product.setImageUrl(dto.getImageUrl());
         product.setPrice(dto.getPrice());
         product.setStock(dto.getStock());
         product.setLowStockThreshold(dto.getLowStockThreshold());
@@ -85,5 +88,10 @@ public class ProductService {
 
         product.setActive(false); // 👻 Lo ocultamos en lugar de borrarlo
         productRepository.save(product);
+    }
+
+    // 6. PRODUCTOS DISPONIBLES PARA LA TIENDA (activos y con stock > 0)
+    public List<Product> getAvailableProducts() {
+        return productRepository.findAvailableProducts();
     }
 }

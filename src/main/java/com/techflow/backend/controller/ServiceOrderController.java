@@ -1,11 +1,15 @@
 package com.techflow.backend.controller;
 
+import com.techflow.backend.dto.RatingRequest;
 import com.techflow.backend.dto.ServiceOrderRequest;
 import com.techflow.backend.entity.ServiceOrder;
+import com.techflow.backend.entity.User;
 import com.techflow.backend.service.ServiceOrderService;
 import com.techflow.backend.enums.OrderStatus;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -51,5 +55,52 @@ public class ServiceOrderController {
             @PathVariable Long id,
             @RequestParam OrderStatus status) {
         return ResponseEntity.ok(serviceOrderService.updateStatus(id, status));
+    }
+
+    // 🔵 GET ÓRDENES DEL CLIENTE AUTENTICADO (busca por ID y por email para vincular órdenes anteriores)
+    @GetMapping("/mine")
+    public ResponseEntity<List<ServiceOrder>> getMyOrders(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(serviceOrderService.getOrdersByClientIdOrEmail(user.getId(), user.getEmail()));
+    }
+
+    // 🔵 GET ORDEN POR ID
+    @GetMapping("/{id}")
+    public ResponseEntity<ServiceOrder> getOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(serviceOrderService.getOrderById(id));
+    }
+
+    // ⭐ POST VALORACIÓN DE UNA ORDEN
+    @PostMapping("/{id}/rating")
+    public ResponseEntity<ServiceOrder> addRating(
+            @PathVariable Long id,
+            @Valid @RequestBody RatingRequest request,
+            @AuthenticationPrincipal User user) {
+        // Verificar que el usuario es el dueño de la orden
+        ServiceOrder order = serviceOrderService.getOrderById(id);
+
+        // Verificar por clientId O por clientEmail
+        boolean isOwner = false;
+        if (order.getClient() != null && order.getClient().getId().equals(user.getId())) {
+            isOwner = true;
+        } else if (order.getClientEmail() != null && order.getClientEmail().equalsIgnoreCase(user.getEmail())) {
+            isOwner = true;
+        }
+
+        if (!isOwner) {
+            throw new RuntimeException("No tienes permiso para valorar esta orden");
+        }
+        return ResponseEntity.ok(serviceOrderService.addRating(id, request.getRating(), request.getComment()));
+    }
+
+    // 🔵 GET ÓRDENES DE UN CLIENTE ESPECÍFICO (para admin)
+    @GetMapping("/client/{clientId}")
+    public ResponseEntity<List<ServiceOrder>> getOrdersByClient(@PathVariable Long clientId) {
+        return ResponseEntity.ok(serviceOrderService.getOrdersByClientId(clientId));
+    }
+
+    // 🔵 GET TODAS LAS ÓRDENES (incluyendo historial) - para admin
+    @GetMapping("/all")
+    public ResponseEntity<List<ServiceOrder>> getAllOrdersIncludingHistory() {
+        return ResponseEntity.ok(serviceOrderService.getAllOrders());
     }
 }

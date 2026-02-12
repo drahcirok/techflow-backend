@@ -11,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,13 +22,33 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
 
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
-        // 1. Crear el usuario con la contraseña encriptada
+        // 0. Validar campos requeridos
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new RuntimeException("El nombre es requerido");
+        }
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new RuntimeException("El correo electrónico es requerido");
+        }
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new RuntimeException("La contraseña es requerida");
+        }
+
+        // 1. Verificar si el email ya existe
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("El correo electrónico ya está registrado");
+        }
+
+        // 2. Crear el usuario con la contraseña encriptada
+        // Si no viene rol, usar CLIENTE por defecto
+        var role = request.getRole() != null ? request.getRole() : com.techflow.backend.enums.Role.CLIENTE;
+
         var user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(request.getRole())
+                .role(role)
                 .active(true)
                 .build();
 
